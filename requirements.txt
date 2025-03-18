@@ -1,0 +1,27 @@
+# Core dependencies
+fastapi==0.103.1
+uvicorn==0.23.2
+streamlit==1.26.0
+requests==2.28.2
+pandas==2.0.3
+pydantic==2.3.0
+python-multipart==0.0.6
+
+# Web scraping
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# NLP
+transformers==4.33.2
+torch==2.0.1
+nltk==3.8.1
+
+# Text-to-Speech
+gTTS==2.3.2
+
+# Visualization
+matplotlib==3.7.3
+seaborn==0.12.2
+
+# Utility
+python-dotenv==1.0.0
