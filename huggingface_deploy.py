@@ -2,6 +2,8 @@ import os
 import subprocess
 import json
 import argparse
+import shutil
+import sys
 
 def deploy_to_huggingface(hf_token, space_name):
     """
@@ -28,7 +30,6 @@ def deploy_to_huggingface(hf_token, space_name):
     # Create Hugging Face Space configuration
     space_config = {
         "title": "Company News Analyzer",
-        "emoji": "📊",
         "colorFrom": "blue",
         "colorTo": "green",
         "sdk": "streamlit",
@@ -80,61 +81,33 @@ The application provides a REST API for programmatic access. API documentation i
     
     for file in files_to_copy:
         if os.path.exists(file):
-            subprocess.check_call(["cp", file, "hf_space/"])
+            shutil.copy(file, "hf_space/")
     
-    # Write space configuration
+    # Write README.md
     with open("hf_space/README.md", "w") as f:
         f.write(hf_readme)
     
+    # Write .gitattributes
     with open("hf_space/.gitattributes", "w") as f:
-        f.write("*.7z filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.arrow filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.bin filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.bz2 filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.ckpt filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.ftz filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.gz filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.h5 filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.joblib filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.lfs.* filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.model filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.msgpack filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.npy filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.npz filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.onnx filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.ot filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.parquet filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.pb filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.pt filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.pth filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.rar filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.safetensors filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.tar.* filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.tflite filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.tgz filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.wasm filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.xz filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.zip filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*.zst filter=lfs diff=lfs merge=lfs -text\n")
-        f.write("*tfevents* filter=lfs diff=lfs merge=lfs -text\n")
+        f.write("* filter=lfs diff=lfs merge=lfs -text\n")
     
-    # Write space configuration
+    # Write space.json config
     with open("hf_space/space.json", "w") as f:
         json.dump(space_config, f, indent=2)
     
-    # Modify app.py to use the correct API URL
+    # Modify app.py API URL for Hugging Face
     with open("hf_space/app.py", "r") as f:
         app_content = f.read()
     
     app_content = app_content.replace(
         "API_URL = \"http://localhost:8000\"  # Local development",
-        "API_URL = \"https://your-app-name.hf.space\"  # Hugging Face Spaces"
+        f"API_URL = \"https://{space_name}.hf.space\"  # Hugging Face Spaces"
     )
     
     with open("hf_space/app.py", "w") as f:
         f.write(app_content)
     
-    # Initialize git repository
+    # Initialize git repo
     os.chdir("hf_space")
     subprocess.check_call(["git", "init"])
     subprocess.check_call(["git", "add", "."])
@@ -146,20 +119,20 @@ The application provides a REST API for programmatic access. API documentation i
         space_name, "--type", "space", "--token", hf_token
     ])
     
-    # Push to Hugging Face Space
+    # Push to Hugging Face
     subprocess.check_call([
         "git", "remote", "add", "origin",
         f"https://huggingface.co/spaces/{space_name}"
     ])
     subprocess.check_call(["git", "push", "-u", "origin", "main"])
     
-    print(f"Successfully deployed to Hugging Face Spaces: https://huggingface.co/spaces/{space_name}")
+    print(f"✅ Successfully deployed to Hugging Face Spaces: https://huggingface.co/spaces/{space_name}")
     return True
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Deploy to Hugging Face Spaces")
     parser.add_argument("--token", required=True, help="Hugging Face API token")
-    parser.add_argument("--space", required=True, help="Name of the Hugging Face Space")
+    parser.add_argument("--space", required=True, help="Name of the Hugging Face Space (format: username/space-name)")
     
     args = parser.parse_args()
     deploy_to_huggingface(args.token, args.space)
